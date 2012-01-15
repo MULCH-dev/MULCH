@@ -116,3 +116,4 @@
   (dolist (players-i (mapcar #'username-variable *registered-usernames*))
     (if (equalp (player-location players-i) name-room)
 	(cons players-i (players-at-aux-1 name-room)))))
+;Objects-at will probably have a cleaner design--I'll make an alist of objects and their locations, so it'll be easier to go through it...
