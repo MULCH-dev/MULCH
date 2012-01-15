@@ -109,4 +109,10 @@
 ;;OK, now I have to make sure I can identify the stream the server is reading from....
 ;;This should work with a custom REPL, one that loops through a list of connections. Do that later, call them mulch-read, mulch-eval, mulch-print. Mulch-print will likely use princ. We'll need some custom exception handling for mulch-read so that "(look" won't screw up the system, and to prevent reader macros
 ;;For the custom REPL--we'll use dolist and set up a list of username-variables, so something like rep-ing on dolist, then looping. Mulch-print will need to have some way of getting a stream....probably hard-wired through the dolist.
-(defstruct 
+(defstruct room name light north east south west northeast southwest northwest southeast players objects )))) ;To prevent bugs with players and objects, create a "build-room" function that takes a name, setfs a var to the room, calls players-at and objects-at to define the objects and players....
+(defun players-at-aux (location-name) (defparameter `,@(players-at-aux-1 location-name) (list nil))) ;This needs an aux function itself due to being a list....Ugly, I know....
+(defun players-at-aux-1 (location-name) (concatenate 'string "players-" location-name))
+(defun players-at (name-room list-players)
+  (dolist (players-i (mapcar #'username-variable *registered-usernames*))
+    (if (equalp (player-location players-i) name-room)
+	(cons players-i (players-at-aux-1 name-room)))))
