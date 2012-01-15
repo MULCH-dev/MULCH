@@ -13,7 +13,7 @@
 You should have received a copy of the GNU General Public License
 along with MULCH.  If not, see <http://www.gnu.org/licenses/>.
 
-MULCH has some code derived from sea4ever's L.I.S.P IRC server, which is also licensed under the GNU General Public License. However, the licensing was not only due to necessity, but also on the choice of the authors.
+MULCH has some code derived from sea4ever's L.I.S.P IRC server, which is also licensed under the GNU General Public License. However, the licensing was not only due to necessity, but also on the choice of the authors. Some code is also derived from the games presented in Conrad Barski's "Land of Lisp" introductory book, as he has given the authors permission to use the code from it as they like 
 
 MULCH is an attempt at writing a MUD codebase entirely in Common Lisp. It is also the current name of a game that will run on the MULCH platform. We have not yet come up with a name to distinguish it from other games that might run on the codebase as no MULCH based games have run as of yet
 
