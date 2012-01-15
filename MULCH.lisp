@@ -88,9 +88,15 @@
 	   (build-player-aux-1 username password ender "human" stream))
 	  ((equalp species "elf")
 	   (build-player-aux-1 username password gender "elf" stream))
-	  ;;;etc, etc, for other species. To be added once we have the basic GAME stuff put in.
+	  ((equalp species "dwarf")
+	   (build-player-aux-1 username password gender "dwarf" stream))
+	  ((equalp species "orc")
+	   (build-player-aux-1 username password gender "orc" stream))
+	  ((equalp species "centaur")
+	   (build-player-aux-1 username password gender "centaur" stream))
+	  ;To be added with default stat mods.
 	  (t (princ "Sorry, didn't catch that. Let's try again")
-	     (build-player-aux username password gender stream)))))
+	     (build-player-aux username password gender stream))))) ;This may seem unnecessary, but it's for exception handling and general cleanliness, especially as species affects stat modifiers
 (defun build-player-aux-1 (username password gender species stream)
   (defparameter `@,(username-variable username) (make-player :name username :password password :gender gender :species species :health 500 :mana 100 :level 0 :experience 0 :stream stream :location starting-location :saved-location starting-location)) ;Maybe change default health and mana...
   (pairlis username password *registered-usernames*))
