@@ -36,8 +36,7 @@
   (listening-sockets nil)
   (connections nil)
   (users))
-(defstruct player name password gender species health mana level experience stream location saved-location) ;Set some default values for these, maybe change to defclass. ALSO: make int wis str dex cha etc....
-;Also, write a function that dolists through the players and if their experience is above, say, 100, then incf their level and setf the experience to their experience minus 100. Have this running at all times.
+
 (defun welcome-to-mulch (stream)
   (princ "Welcome to the MULCH, v0.0" stream)
   (princ #\Newline stream)
@@ -109,6 +108,3 @@
 	  (server-state-connections server-state))
     (welcome-to-mulch (stream-usocket-stream new-user-i))))
 
-;;OK, now I have to make sure I can identify the stream the server is reading from....
-;;This should work with a custom REPL, one that loops through a list of connections. Do that later, call them mulch-read, mulch-eval, mulch-print. Mulch-print will likely use princ. We'll need some custom exception handling for mulch-read so that "(look" won't screw up the system, and to prevent reader macros
-;;For the custom REPL--we'll use dolist and set up a list of username-variables, so something like rep-ing on dolist, then looping. Mulch-print will need to have some way of getting a stream....probably hard-wired through the dolist.
