@@ -18,6 +18,4 @@
 (in-package #:mulch)
 
 ;;; "MULCH" goes here. Hacks and glory await!
-(load "server.lisp")
-(load "structs.lisp")
-
+(dolist (files ("server.lisp" "structs.lisp" "io.lisp") (load files)))
