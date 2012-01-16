@@ -19,5 +19,8 @@
   :serial t
   :depends-on (#:usocket #:ironclad) ;Once I find a good time library, or how to work with CL's internal time stuff, I'll probably add that here
   :components ((:file "package")
-               (:file "mulch")))
+               (:file "main")
+	       (:file "server")
+	       (:file "structs")
+	       (:file "io")))
 
