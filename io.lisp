@@ -22,3 +22,22 @@
 ;;OK, now I have to make sure I can identify the stream the server is reading from....see next comment and IRC logs
 ;;This should work with a custom REPL, one that loops through a list of connections. Do that later, call them mulch-read, mulch-eval, mulch-print. Mulch-print will likely use princ. We'll need some custom exception handling for mulch-read so that "(look" won't screw up the system, and to prevent reader macros
 ;;For the custom REPL--we'll use dolist and set up a list of username-variables, so something like rep-ing on dolist, then looping. Mulch-print will need to have some way of getting a stream....probably hard-wired through the dolist.
+(defun tweak-text (lst caps lit)
+  (when lst
+    (let ((item (car lst))
+          (rest (cdr lst)))
+      (cond ((eql item #\space) (cons item (tweak-text rest caps lit)))
+            ((member item '(#\! #\? #\.)) (cons item (tweak-text rest t lit)))
+            ((eql item #\") (tweak-text rest caps (not lit)))
+            (lit (cons item (tweak-text rest nil lit)))
+            (caps (cons (char-upcase item) (tweak-text rest nil lit)))
+            (t (cons (char-downcase item) (tweak-text rest nil nil)))))))
+(defun mulch-print (lst)
+    (princ (coerce (tweak-text (coerce (string-trim "() " (prin1-to-string lst)) 'list) t nil) 'string))
+    (fresh-line))
+(defun mulch-read ()
+    (let ((cmd (read-from-string (concatenate 'string "(" (read-line) ")"))))
+         (flet ((quote-it (x)
+                    (list 'quote x)))
+             (cons (car cmd) (mapcar #'quote-it (cdr cmd))))))
+;;Currently, we'll be using regular eval, but it should be replaced once we have a defcommand macro.
