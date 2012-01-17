@@ -40,4 +40,11 @@
          (flet ((quote-it (x)
                     (list 'quote x)))
              (cons (car cmd) (mapcar #'quote-it (cdr cmd))))))
+
+(defun mulch-repl ()
+       (dolist (users-i (mapcar #'username-variable (map 'list (alist :keys) *registered-usernames*)))
+	 (if (player-stream users-i)
+	     (let ((cmd (mulch-read users-i)) (user-stream (player-stream users-i))) 
+	     (mulch-print (eval cmd))
+	     (mulch-repl))))) ;I have no idea whether or not this will work.
 ;;Currently, we'll be using regular eval, but it should be replaced once we have a defcommand macro.
