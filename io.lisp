@@ -48,3 +48,5 @@
 	     (mulch-print (eval cmd))
 	     (mulch-repl))))) ;I have no idea whether or not this will work.
 ;;Currently, we'll be using regular eval, but it should be replaced once we have a defcommand macro.
+
+;;Now we must create a defcommand macro (in order to simplify the task of limiting certain commands to certain groups of players, e.g. level 40 and above or only Occultists... It will also be used for the basic communication commands: say, tell. We'll need to implement channels with this as well
