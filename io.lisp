@@ -50,5 +50,28 @@
 		  ))))) ;I have no idea whether or not this will work.
 ;;Currently, we'll be using regular eval, but it should be replaced once we have a defcommand macro.
 
-;;Now we must create a defcommand macro (in order to simplify the task of limiting certain commands to certain groups of players, e.g. level 40 and above or only Occultists... It will also be used for the basic communication commands: say, tell. We'll need to implement channels with this as well
-(defmacro defcommand (
+;;Now we must create a defcommand macro (in order to simplify the task of limiting certain commands to certain groups of players, e.g. level 40 and above or only Occultists... It will also be used for the basic communication commands: say, tell. We'll need to implement channels with this as well.
+(defmacro defcommand (name (&rest args) player level class species gender gold  &body body)
+  "Specialized DEFUN for commands to reduce code duplication"
+  `(defun ,name (,args) 
+     (if (or (> (player-gold player) ,gold) (null ,gold))
+	 ,@body
+	 (mulch-print "I do not know that command"))
+     (if (or (> (player-level player) ,level) (null ,level))
+	 ,@body
+	 (mulch-print "I do not know that command"))
+     (if (or (equalp (player-class player) ,class) (null ,class))
+	 ,@body
+	 (mulch-print "I do not know that command"))
+     (if (or (equalp (player-species player) ,species) (null ,species))
+	 ,@body
+	 (mulch-print "I do not know that command"))
+     (if (or (equalp (player-gender player) ,gender) (null ,gender))
+	 ,@body
+	 (mulch-print "I do not know that command"))))
+
+
+
+		      
+	  
+  
