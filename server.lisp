@@ -40,11 +40,11 @@
 (defun welcome-to-mulch (stream)
   (princ "Welcome to the MULCH, v0.0" stream)
   (princ #\Newline stream)
-  (princ "Enter your username" stream)
+  (princ "Enter your username:" stream)
   (let ((username (read-line stream)))
     (if (assoc username *registered-usernames*) ;*registered-usernames* is an alist...
 	(progn
-	  (princ "Enter your password" stream)
+	  (princ "Enter your password:" stream)
 	  (let ((password (read-line)))
 	    (if (equal (cdr (assoc username *registered-usernames*)) password)
 		(progn 
@@ -71,13 +71,13 @@
 		     (build-player-aux username password1 "male" stream))
 		    ((or (equalp gender "f") (equalp gender "female"))
 		     (build-player-aux username password1 "female" stream))
-		    (t (princ "Sorry, didn't catch that. Let's try again")
+		    (t (princ "Sorry, didn't catch that. Let's try again: enter 'male' or 'female'.")
 		       (build-player username stream)))))
 	  (progn
 	    (princ "Passwords do not match" stream)
 	    (welcome-to-mulch stream))))))
 (defun build-player-aux (username password gender stream)
-  (princ "Which species are you? Choose from the following list" stream)
+  (princ "Which species are you? Choose from the following list:" stream)
   (princ species-list stream);;Add species with the game engine.
   (let ((species (read-line)))
     (cond ((equalp species "human")
