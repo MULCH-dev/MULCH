@@ -40,14 +40,16 @@
          (flet ((quote-it (x)
                     (list 'quote x)))
              (cons (car cmd) (mapcar #'quote-it (cdr cmd))))))
-
+(defparameter user-stream nil "The stream to the current user it's reading")
+(defun alist (what)
+  (ecase what (:keys (function car)) (:values (function cdr))))
 (defun mulch-repl ()
        (loop
-	  (dolist (users-i (mapcar #'username-variable (map 'list (alist :keys) *registered-usernames*)))
+	  (dolist (users-i (mapcar #'username-variable (map 'list (alist :keys)  *registered-usernames*)))
 	    (if (player-stream users-i)
-		(let ((cmd (mulch-read users-i)) (user-stream (player-stream users-i))) 
-		  (mulch-print (eval cmd))
-		  ))))) ;I have no idea whether or not this will work.
+		(let ((cmd (mulch-read users-i)))
+		  (setf user-stream (player-stream users-i))
+		  (mulch-print (eval cmd))))))) ;I have no idea whether or not this will work.
 ;;Currently, we'll be using regular eval, but it should be replaced once we have a defcommand macro.
 
 ;;Now we must create a defcommand macro (in order to simplify the task of limiting certain commands to certain groups of players, e.g. level 40 and above or only Occultists... It will also be used for the basic communication commands: say, tell. We'll need to implement channels with this as well.
@@ -69,9 +71,15 @@
      (if (or (equalp (player-gender player) ,@gender) (null ,@gender))
 	 ,@body
 	 (mulch-print "I do not know that command"))))
-
-
-
+(defun say (words) 
+  (let ((users-at-room (remove (find-player-from-stream user-stream) (locale-players (player-location (find-player-from-stream user-stream))))))
+    (dolist (users-i (users-at-room))
+      (mulch-print (concatenate 'string (find-player-from-stream user-stream) "says:""\"" words "\"") (player-stream users-i)))))
+(defun tell (player words)
+  (let ((recip-stream (player-stream (username-variable player))))
+    (mulch-print (concatenate 'string (find-player-from-stream user-stream) "tells you:" "\"" words "\"") recip-stream)))
+    
+  
 		      
 	  
   
