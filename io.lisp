@@ -53,24 +53,19 @@
 ;;Currently, we'll be using regular eval, but it should be replaced once we have a defcommand macro.
 
 ;;Now we must create a defcommand macro (in order to simplify the task of limiting certain commands to certain groups of players, e.g. level 40 and above or only Occultists... It will also be used for the basic communication commands: say, tell. We'll need to implement channels with this as well.
-(defmacro defcommand (name (&rest args) player level c-class species gender gold  &body body)
+(defmacro defcommand (name (&rest args) player level c-class species gender gold city newbie  &body body)
   "Specialized DEFUN for commands to reduce code duplication"
   `(defun ,@name ,args 
-     (if (or (> (player-gold player) ,@gold) (null ,@gold))
-	 ,@body
-	 (mulch-print "I do not know that command"))
-     (if (or (> (player-level player) ,@level) (null ,@level))
-	 ,@body
-	 (mulch-print "I do not know that command"))
-     (if (or (equalp (player-class player) ,@c-class) (null ,@c-class))
-	 ,@body
-	 (mulch-print "I do not know that command"))
-     (if (or (equalp (player-species player) ,@species) (null ,@species))
-	 ,@body
-	 (mulch-print "I do not know that command"))
-     (if (or (equalp (player-gender player) ,@gender) (null ,@gender))
-	 ,@body
-	 (mulch-print "I do not know that command"))))
+     (if (and (or (> (player-gold player) ,@gold) (null ,@gold))
+	 (or (> (player-level player) ,@level) (null ,@level))
+	 (or (equalp (player-class player) ,@c-class) (null ,@c-class))
+	 (or (equalp (player-species player) ,@species) (null ,@species))
+	 (or (equalp (player-gender player) ,@gender) (null ,@gender))
+	 (or (equalp (player-city player) ,@city) (null ,@city))
+	 (or (<= (player-level player) 20) (null newbie)))
+    ,body
+    (mulch-print "I do not know that command"))))
+
 (defun say (&rest words) 
   (let ((users-at-room (remove (find-player-from-stream user-stream) (locale-players (player-location (find-player-from-stream user-stream))))))
     (dolist (users-i (users-at-room))
@@ -79,7 +74,7 @@
   (let ((recip-stream (player-stream (username-variable player))))
     (format recip-stream "~:(~A~) tells you: ~(~({~A~^ ~}~)~%" (find-player-from-stream user-stream) words)))
 ;;How will I make channels? Maybe I'll make a function for each channel that conses a user to a list of people on the channel if they meet such-and-such condition, and have a channel-say command for each of them such that it prints it to all the streams on the channel? This is enough code reuse that it probably warrants a macro.
-(defmacro channels (n
+(defmacro channels (name 
     
   
 		      
