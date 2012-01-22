@@ -71,14 +71,15 @@
      (if (or (equalp (player-gender player) ,@gender) (null ,@gender))
 	 ,@body
 	 (mulch-print "I do not know that command"))))
-(defun say (words) 
+(defun say (&rest words) 
   (let ((users-at-room (remove (find-player-from-stream user-stream) (locale-players (player-location (find-player-from-stream user-stream))))))
     (dolist (users-i (users-at-room))
-      (mulch-print (concatenate 'string (find-player-from-stream user-stream) "says:""\"" words "\"") (player-stream users-i)))))
-(defun tell (player words)
+      (format recip-stream "~:(~A~) says: ~(~({~A~^ ~}~)~%" (find-player-from-stream user-stream) words)))
+(defun tell (player &rest words)
   (let ((recip-stream (player-stream (username-variable player))))
-    (mulch-print (concatenate 'string (find-player-from-stream user-stream) "tells you:" "\"" words "\"") recip-stream)))
+    (format recip-stream "~:(~A~) tells you: ~(~({~A~^ ~}~)~%" (find-player-from-stream user-stream) words)))
 ;;How will I make channels? Maybe I'll make a function for each channel that conses a user to a list of people on the channel if they meet such-and-such condition, and have a channel-say command for each of them such that it prints it to all the streams on the channel? This is enough code reuse that it probably warrants a macro.
+(defmacro channels (n
     
   
 		      
