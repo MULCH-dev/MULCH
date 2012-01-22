@@ -1,17 +1,17 @@
-;;;; This file is part of MULCH.
-;;;;
-;;;;MULCH is free software: you can redistribute it and/or modify
-;;;;it under the terms of the GNU General Public License as published by
-;;;;the Free Software Foundation, either version 3 of the License, or
-;;;;(at your option) any later version.
-;;;;
-;;;;MULCH is distributed in the hope that it will be useful,
-;;;;but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;;;MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;;;GNU General Public License for more details.
-;;;;
-;;;;You should have received a copy of the GNU General Public License
-;;;;along with MULCH.  If not, see <http://www.gnu.org/licenses/>.
+#| This file is part of MULCH.
+
+MULCH is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or 
+ (at your option) any later version.
+
+MULCH is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with MULCH.  If not, see <http://www.gnu.org/licenses/>.|#
 
 ;;;;io.lisp
 
@@ -56,15 +56,17 @@
 (defmacro defcommand (name (&rest args) player level c-class species gender gold city newbie  &body body)
   "Specialized DEFUN for commands to reduce code duplication"
   `(defun ,@name ,args 
-     (if (and (or (> (player-gold player) ,@gold) (null ,@gold))
-	 (or (> (player-level player) ,@level) (null ,@level))
-	 (or (equalp (player-class player) ,@c-class) (null ,@c-class))
-	 (or (equalp (player-species player) ,@species) (null ,@species))
-	 (or (equalp (player-gender player) ,@gender) (null ,@gender))
-	 (or (equalp (player-city player) ,@city) (null ,@city))
-	 (or (<= (player-level player) 20) (null newbie)))
-    ,body
-    (mulch-print "I do not know that command"))))
+     (if 
+      (and 
+       (or (> (player-gold player) ,@gold) (null ,@gold))
+       (or (> (player-level player) ,@level) (null ,@level))
+       (or (equalp (player-class player) ,@c-class) (null ,@c-class))
+       (or (equalp (player-species player) ,@species) (null ,@species))
+       (or (equalp (player-gender player) ,@gender) (null ,@gender))
+       (or (equalp (player-city player) ,@city) (null ,@city))
+       (or (<= (player-level player) 20) (null ,@newbie)))
+      ,body
+      (mulch-print "I do not know that command"))))
 
 (defun say (&rest words) 
   (let ((users-at-room (remove (find-player-from-stream user-stream) (locale-players (player-location (find-player-from-stream user-stream))))))
