@@ -53,32 +53,45 @@ along with MULCH.  If not, see <http://www.gnu.org/licenses/>.|#
 ;;Currently, we'll be using regular eval, but it should be replaced once we have a defcommand macro.
 
 ;;Now we must create a defcommand macro (in order to simplify the task of limiting certain commands to certain groups of players, e.g. level 40 and above or only Occultists... It will also be used for the basic communication commands: say, tell. We'll need to implement channels with this as well.
-(defmacro defcommand (name (&rest args) player level c-class species gender gold city newbie  &body body)
+(defmacro defcommand (name level c-class species gender gold city newbie (&rest args))  &body body)
   "Specialized DEFUN for commands to reduce code duplication"
   `(defun ,@name ,args 
-     (if 
-      (and 
-       (or (> (player-gold player) ,@gold) (null ,@gold))
-       (or (> (player-level player) ,@level) (null ,@level))
-       (or (equalp (player-class player) ,@c-class) (null ,@c-class))
-       (or (equalp (player-species player) ,@species) (null ,@species))
-       (or (equalp (player-gender player) ,@gender) (null ,@gender))
-       (or (equalp (player-city player) ,@city) (null ,@city))
-       (or (<= (player-level player) 20) (null ,@newbie)))
-      ,body
-      (mulch-print "I do not know that command"))))
+     (let ((player (find-player-from-stream user-stream)))
+       (if 
+	(and 
+	 (or (> (player-gold player) ,@gold) (null ,@gold))
+	 (or (> (player-level player) ,@level) (null ,@level))
+	 (or (equalp (player-class player) ,@c-class) (null ,@c-class))
+	 (or (equalp (player-species player) ,@species) (null ,@species))
+	 (or (equalp (player-gender player) ,@gender) (null ,@gender))
+	 (or (equalp (player-city player) ,@city) (null ,@city))
+	 (or (<= (player-level player) 20) (null ,@newbie)))
+	,body
+	(mulch-print "I do not know that command")))))
 
 (defun say (&rest words) 
-  (let ((users-at-room (remove (find-player-from-stream user-stream) (locale-players (player-location (find-player-from-stream user-stream))))))
-    (dolist (users-i (users-at-room))
-      (format recip-stream "~:(~A~) says: ~(~({~A~^ ~}~)~%" (find-player-from-stream user-stream) words)))
+    (dolist (users-i (remove (find-player-from-stream user-stream) (locale-players (player-location (find-player-from-stream user-stream))))))
+      (format (player-stream users-i) "~:(~A~) says: ~:(~{~A~^ ~}~)~%" (find-player-from-stream user-stream) words)))
 (defun tell (player &rest words)
   (let ((recip-stream (player-stream (username-variable player))))
-    (format recip-stream "~:(~A~) tells you: ~(~({~A~^ ~}~)~%" (find-player-from-stream user-stream) words)))
+    (format recip-stream "~:(~A~) tells you: ~:(~{~A~^ ~}~)~%" (find-player-from-stream user-stream) words)))
 ;;How will I make channels? Maybe I'll make a function for each channel that conses a user to a list of people on the channel if they meet such-and-such condition, and have a channel-say command for each of them such that it prints it to all the streams on the channel? This is enough code reuse that it probably warrants a macro.
-(defmacro channels (name 
-    
-  
-		      
-	  
+(defmacro channel (name level c-class species gender gold city newbie)
+  `(defparameter ,@name nil)
+  `(loop for i in (mapcar #'username-variable (map 'list (alist :keys) *registered-usernames*))
+	(if
+	   (and 
+	    (or (> (player-gold players-i) ,@gold) (null ,@gold))
+	    (or (> (player-level players-i) ,@level) (null ,@level))
+	    (or (equalp (player-class players-i) ,@c-class) (null ,@c-class))
+	    (or (equalp (player-species players-i) ,@species) (null ,@species))
+	    (or (equalp (player-gender players-i) ,@gender) (null ,@gender))
+	    (or (equalp (player-city players-i) ,@city) (null ,@city))
+	    (or (<= (player-level players-i) 20) (null ,@newbie)))
+	   (cons i ,@name)))
+  `(defcommand ((concatenate 'string ,@name "-say") ,@level ,@c-class ,@species ,@gender ,@gold ,@city ,@newbie (&rest words))
+       (dolist (in-channel-i (mapcar #'player-stream ,@name))
+	 (format in-channel-i "~:@(~A~) ~:(~A~) says: ~:(~{~A~^ ~}~)~%" ,@name (find-player-from-stream user-stream) words))))
+ 
+	
   
