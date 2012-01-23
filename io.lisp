@@ -78,20 +78,22 @@ along with MULCH.  If not, see <http://www.gnu.org/licenses/>.|#
 ;;How will I make channels? Maybe I'll make a function for each channel that conses a user to a list of people on the channel if they meet such-and-such condition, and have a channel-say command for each of them such that it prints it to all the streams on the channel? This is enough code reuse that it probably warrants a macro.
 (defmacro channel (name level c-class species gender gold city newbie)
   `(defparameter ,@name nil)
-  `(loop for i in (mapcar #'username-variable (map 'list (alist :keys) *registered-usernames*))
-	(if
-	   (and 
-	    (or (> (player-gold players-i) ,@gold) (null ,@gold))
-	    (or (> (player-level players-i) ,@level) (null ,@level))
-	    (or (equalp (player-class players-i) ,@c-class) (null ,@c-class))
-	    (or (equalp (player-species players-i) ,@species) (null ,@species))
-	    (or (equalp (player-gender players-i) ,@gender) (null ,@gender))
-	    (or (equalp (player-city players-i) ,@city) (null ,@city))
-	    (or (<= (player-level players-i) 20) (null ,@newbie)))
-	   (cons i ,@name)))
-  `(defcommand ((concatenate 'string ,@name "-say") ,@level ,@c-class ,@species ,@gender ,@gold ,@city ,@newbie (&rest words))
-       (dolist (in-channel-i (mapcar #'player-stream ,@name))
-	 (format in-channel-i "~:@(~A~) ~:(~A~) says: ~:(~{~A~^ ~}~)~%" ,@name (find-player-from-stream user-stream) words))))
+  `(let ((channel-loop (concatenate 'string ,@name "-update")))
+     (defun ,@channel-loop ()
+	 (loop for i in (mapcar #'username-variable (map 'list (alist :keys) *registered-usernames*))
+	      (if
+	       (and 
+		(or (> (player-gold players-i) ,@gold) (null ,@gold))
+		(or (> (player-level players-i) ,@level) (null ,@level))
+		(or (equalp (player-class players-i) ,@c-class) (null ,@c-class))
+		(or (equalp (player-species players-i) ,@species) (null ,@species))
+		(or (equalp (player-gender players-i) ,@gender) (null ,@gender))
+		(or (equalp (player-city players-i) ,@city) (null ,@city))
+		(or (<= (player-level players-i) 20) (null ,@newbie)))
+	       (cons i ,@name)))
+       `(defcommand ((concatenate 'string ,@name "-say") ,@level ,@c-class ,@species ,@gender ,@gold ,@city ,@newbie (&rest words))
+	    (dolist (in-channel-i (mapcar #'player-stream ,@name))
+	      (format in-channel-i "~:@(~A~) ~:(~A~) says: ~:(~{~A~^ ~}~)~%" ,@name (find-player-from-stream user-stream) words))))_
  
 	
   
