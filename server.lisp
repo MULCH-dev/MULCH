@@ -1,19 +1,19 @@
-;;;; This file is part of MULCH.
-;;;;
-;;;;MULCH is free software: you can redistribute it and/or modify
-;;;;it under the terms of the GNU General Public License as published by
-;;;;the Free Software Foundation, either version 3 of the License, or
-;;;;(at your option) any later version.
-;;;;
-;;;;MULCH is distributed in the hope that it will be useful,
-;;;;but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;;;MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;;;GNU General Public License for more details.
-;;;;
-;;;;You should have received a copy of the GNU General Public License
-;;;;along with MULCH.  If not, see <http://www.gnu.org/licenses/>.
+#| This file is part of MULCH.
 
-;;;;server.lisp
+    MULCH is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    
+    MULCH is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    
+    You should have received a copy of the GNU General Public License
+    along with MULCH.  If not, see <http://www.gnu.org/licenses/>.
+
+    server.lisp|#
 '
 
 ;;;This is for setting up the multiplexer
@@ -22,7 +22,7 @@
   (if (usocket:state socket)
       (usocket:socket-accept socket)
       nil))
-(defun server-accept-loop (listeners &optional (accum nil)
+(defun server-accept-loop (listeners &optional (accum nil))
 			   (if (not listeners)
 			       accum
 			       (server-accept-loop (cdr listeners)
@@ -42,11 +42,11 @@
   (princ #\Newline stream)
   (princ "Enter your username:" stream)
   (let ((username (read-line stream)))
-    (if (assoc username *registered-usernames*) ;*registered-usernames* is an alist...
+    (if (gethash username *users*) 
 	(progn
 	  (princ "Enter your password:" stream)
 	  (let ((password (read-line)))
-	    (if (equal (cdr (assoc username *registered-usernames*)) password)
+	    (if (equal (player-password (gethash username *users*)) password)
 		(progn 
 		  (princ #\Newline stream)
 		  (princ "Welcome, " stream)
@@ -65,13 +65,15 @@
     (let ((password2 (read-line)))
       (if (equal password1 password2)
 	  (progn
-	    (princ "Do you wish to be (physically) male or female? Note that Spivak pronouns will be used throughout the game" stream)
+	    (princ "Do you wish to be referred to by male, female, or spivak pronouns?" stream)
 	    (let ((gender (read-line)))
 	      (cond ((or (equalp gender "m") (equalp gender "male"))
 		     (build-player-aux username password1 "male" stream))
 		    ((or (equalp gender "f") (equalp gender "female"))
 		     (build-player-aux username password1 "female" stream))
-		    (t (princ "Sorry, didn't catch that. Let's try again: enter 'male' or 'female'.")
+		    ((equalp gender "spivak")
+		     (build-player-aux username password1 "spivak" stream))
+		    (t (princ "Sorry, didn't catch that. Let's try again: enter 'male' or 'female', or 'spivak'.")
 		       (build-player username stream)))))
 	  (progn
 	    (princ "Passwords do not match" stream)
@@ -93,10 +95,12 @@
 	  ;To be added with default stat mods.
 	  (t (princ "Sorry, didn't catch that. Let's try again")
 	     (build-player-aux username password gender stream))))) ;This may seem unnecessary, but it's for exception handling and general cleanliness, especially as species affects stat modifiers
-(defun build-player-aux-1 (username password gender species stream)
-  (defparameter `@,(username-variable username) (make-player :name username :password password :gender gender :species species :health 500 :mana 100 :level 0 :experience 0 :stream stream :location starting-location :saved-location starting-location)) ;Maybe change default health and mana...
-  (pairlis username password *registered-usernames*))
-(defun username-variable (username) (concatenate 'string "*user-" username "*"));This will be bound to the structs, so it deserves a function...
+(defun build-player-aux-1 (username password gender species stream) 
+ (setf (gethash username *users*) (make-player :name username :password password :gender gender :species species :health 500 :mana 100 :level 0 :experience 0 :stream stream :location starting-location :saved-location starting-location))) ;Maybe change default health and mana...and add other things.
+  
+  (newbie-tut (username))))
+;;Define a newbie-tutorial 
+(defun username-variable (username) (concatenate 'string "*user-" username));This will be bound to the structs, so it deserves a function...
 (defstruct connection ;;Also from IRC server
   (socket nil)
   (output-list) ;;List of strings to push out of this socket.
@@ -108,3 +112,5 @@
 	  (server-state-connections server-state))
     (welcome-to-mulch (stream-usocket-stream new-user-i))))
 
+;;;OK, I'm going to completely redefine the way I handle users. I'll put the structs in a hash table, *users*...
+(defparameter *users* (make-hash-table))
