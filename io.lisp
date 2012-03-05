@@ -22,16 +22,6 @@ along with MULCH.  If not, see <http://www.gnu.org/licenses/>.|#
 ;;OK, now I have to make sure I can identify the stream the server is reading from....see next comment and IRC logs
 ;;This should work with a custom REPL, one that loops through a list of connections. Do that later, call them mulch-read, mulch-eval, mulch-print. Mulch-print will likely use princ. We'll need some custom exception handling for mulch-read so that "(look" won't screw up the system, and to prevent reader macros
 ;;For the custom REPL--we'll use dolist and set up a list of username-variables, so something like rep-ing on dolist, then looping. Mulch-print will need to have some way of getting a stream....probably hard-wired through the dolist.
-(defun tweak-text (lst caps lit)
-  (when lst
-    (let ((item (car lst))
-          (rest (cdr lst)))
-      (cond ((eql item #\space) (cons item (tweak-text rest caps lit)))
-            ((member item '(#\! #\? #\.)) (cons item (tweak-text rest t lit)))
-            ((eql item #\") (tweak-text rest caps (not lit)))
-            (lit (cons item (tweak-text rest nil lit)))
-            (caps (cons (char-upcase item) (tweak-text rest nil lit)))
-            (t (cons (char-downcase item) (tweak-text rest nil nil)))))))
 (defun mulch-print (lst)
     (princ (coerce (tweak-text (coerce (string-trim "() " (prin1-to-string lst)) 'list) t nil) 'string))
     (fresh-line))
@@ -40,7 +30,7 @@ along with MULCH.  If not, see <http://www.gnu.org/licenses/>.|#
          (flet ((quote-it (x)
                     (list 'quote x)))
              (cons (car cmd) (mapcar #'quote-it (cdr cmd))))))
-(defparameter user-stream nil "The stream to the current user it's reading")
+(defparameter user-stream nil "The stream to the current user it's reading from")
 (defun mulch-repl ()
   (labels ((poll-repl (users-i) 
 	     (if (player-stream users-i)
@@ -52,7 +42,7 @@ along with MULCH.  If not, see <http://www.gnu.org/licenses/>.|#
 ;;Currently, we'll be using regular eval, but it should be replaced once we have a defcommand macro.
 
 ;;Now we must create a defcommand macro (in order to simplify the task of limiting certain commands to certain groups of players, e.g. level 40 and above or only Occultists... It will also be used for the basic communication commands: say, tell. We'll need to implement channels with this as well.
-(defmacro defcommand (name level c-class species gender gold city newbie (&rest args))  &body body)
+(defmacro defcommand (name level c-class species gender gold city newbie (&rest args) &body body)
   "Specialized DEFUN for commands to reduce code duplication"
 (let ((player (gensym)))
   `(defun ,@name ,args 
@@ -76,24 +66,6 @@ along with MULCH.  If not, see <http://www.gnu.org/licenses/>.|#
   (let ((recip-stream (player-stream (username-variable player))))
     (format recip-stream "~:(~A~) tells you: ~:(~{~A~^ ~}~)~%" (find-player-from-stream user-stream) words)))
 ;;How will I make channels? Maybe I'll make a function for each channel that conses a user to a list of people on the channel if they meet such-and-such condition, and have a channel-say command for each of them such that it prints it to all the streams on the channel? This is enough code reuse that it probably warrants a macro.
-(defmacro channel (name level c-class species gender gold city newbie)
-  `(defparameter ,@name nil)
-  `(let ((channel-loop (concatenate 'string ,@name "-update")))
-     (defun ,@channel-loop ()
-	 (loop for i in (mapcar #'username-variable (map 'list (alist :keys) *registered-usernames*))
-	      (if
-	       (and 
-		(or (> (player-gold players-i) ,@gold) (null ,@gold))
-		(or (> (player-level players-i) ,@level) (null ,@level))
-		(or (equalp (player-class players-i) ,@c-class) (null ,@c-class))
-		(or (equalp (player-species players-i) ,@species) (null ,@species))
-		(or (equalp (player-gender players-i) ,@gender) (null ,@gender))
-		(or (equalp (player-city players-i) ,@city) (null ,@city))
-		(or (<= (player-level players-i) 20) (null ,@newbie)))
-	       (cons i ,@name))))
-       `(defcommand ((concatenate 'string ,@name "-say") ,@level ,@c-class ,@species ,@gender ,@gold ,@city ,@newbie (&rest words))
-	    (dolist (in-channel-i (mapcar #'player-stream ,@name))
-	      (format in-channel-i "~:@(~A~) ~:(~A~) says: ~:(~{~A~^ ~}~)~%" ,@name (find-player-from-stream user-stream) words))))))
 (defmacro channel (name level c-class species gender city newbie)
   `(defparameter ,@name nil)
   `(let ((channel-loop (concatenate 'string ,@name "-update")))
@@ -120,37 +92,39 @@ along with MULCH.  If not, see <http://www.gnu.org/licenses/>.|#
 (defun look ()
   (let ((player-room (player-location (find-player-from-stream user-stream))))
    (princ (locale-description player-room) user-stream)
-   ;;I could probably seperate this in a different function to avoid code duplication.
+   ;;I could probably seperate this in a different function to avoid code duplication
+   ;;the car of locale-DIRECTION is the room, the cadr the implement, the caddr the accessiblity predicate.
    (if (locale-north player-room)
-       (describe-exit (cdr (locale-north player-room)) "north"))
+       (describe-exit (cadr (locale-north player-room)) "north"))
    (if (locale-east player-room)
-       (describe-exit (cdr (locale-east player-room)) "east"))
+       (describe-exit (cadr (locale-east player-room)) "east"))
    (if (locale-west player-room)
-       (describe-exit (cdr (locale-west player-room)) "west"))
+       (describe-exit (cadr (locale-west player-room)) "west"))
    (if (locale-south player-room)
-       (describe-exit (cdr (locale-south player-room)) "south"))
+       (describe-exit (cadr (locale-south player-room)) "south"))
    (if (locale-northeast player-room)
-       (describe-exit (cdr (locale-northeast player-room)) "northeast"))
+       (describe-exit (cadr (locale-northeast player-room)) "northeast"))
    (if (locale-northwest player-room)
-       (describe-exit (cdr (locale-northwest player-room)) "northwest"))
+       (describe-exit (cadr (locale-northwest player-room)) "northwest"))
    (if (locale-southeast player-room)
-       (describe-exit (cdr (locale-southeast player-room)) "southeast"))
+       (describe-exit (cadr (locale-southeast player-room)) "southeast"))
    (if (locale-southwest player-room)
-       (describe-exit (cdr (locale-southwest player-room)) "southwest"))
+       (describe-exit (cadr (locale-southwest player-room)) "southwest"))
    (if (locale-up player-room)
-       (describe-exit (cdr (locale-up player-room)) "up"))
+       (describe-exit (cadr (locale-up player-room)) "up"))
    (if (locale-down player-room)
-       (describe-exit (cdr (locale-down player-room)) "down"))
+       (describe-exit (cadr (locale-down player-room)) "down"))
    (if (locale-in player-room)
-       (describe-exit (cdr (locale-in player-room)) "in"))
+       (describe-exit (cadr (locale-in player-room)) "in"))
    (if (locale-out player-room)
-       (describe-exit (cdr (locale-out player-room)) "out"))
+       (describe-exit (cadr (locale-out player-room)) "out"))
+   (princ describe-inhabitants user-stream)))
    ;Add more directions here
 ))
 (defun describe-exit (implement direction)
   (princ (concatenate 'string "There is a " implement " going" direction " from here") user-stream))
 (defun north ()
-   (if (locale-north (player-location (find-player-from-stream user-stream)))
+   (if (caddr (locale-north (player-location (find-player-from-stream user-stream))))
        (progn (setf (player-location (find-player-from-stream user-stream) (car (locale-north (player-location (find-player-from-stream user-stream))))))
 	(look))
        (princ "There is no exit leading north here" user-stream)))
@@ -223,3 +197,4 @@ along with MULCH.  If not, see <http://www.gnu.org/licenses/>.|#
 (defun |go out| ()
       out)
 ;;;Should be enough.
+;;;Note: this is not elegant. Replace with a (move..) function or macro which takes a parameter....
