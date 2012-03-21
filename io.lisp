@@ -39,10 +39,15 @@ along with MULCH.  If not, see <http://www.gnu.org/licenses/>.|#
 		   (mulch-print (eval cmd))))))
     (maphash #'poll-repl *users*))
   (mulch-repl))
+;;This alist lists some names to be redirected to appropriate functions. Migrate the "go ..." over here. I'll need to check with mulch-read to see if it should be a string or not. For right now, let's assume it's a symbol
+(defparameter *syms* nil)
+(acons 'get 'pickup *syms*)
+
 ;;Currently, we'll be using regular eval, but it should be replaced once we have a defcommand macro.
 
 ;;Now we must create a defcommand macro (in order to simplify the task of limiting certain commands to certain groups of players, e.g. level 40 and above or only Occultists... It will also be used for the basic communication commands: say, tell. We'll need to implement channels with this as well.
-(defmacro defcommand (name level c-class species gender gold city newbie (&rest args) &body body)
+;Find some way to create synonyms, e.g. "get" (which is a LISP function already...) for "pickup". This would also reduce redundancy in later, inelegant "moving" code.
+(defmacro defcommand (name (&optional level c-class species gender gold city newbie) (&rest args) &body body)
   "Specialized DEFUN for commands to reduce code duplication"
 (let ((player (gensym)))
   `(defun ,@name ,args 
@@ -62,14 +67,14 @@ along with MULCH.  If not, see <http://www.gnu.org/licenses/>.|#
 (defun say (&rest words) 
     (dolist (users-i (remove (find-player-from-stream user-stream) (locale-players (player-location (find-player-from-stream user-stream))))))
       (format (player-stream users-i) "~:(~A~) says: ~:(~{~A~^ ~}~)~%" (find-player-from-stream user-stream) words)))
-(defun tell (player &rest words)
+(defun tell (player &rest words) 
   (let ((recip-stream (player-stream (username-variable player))))
     (format recip-stream "~:(~A~) tells you: ~:(~{~A~^ ~}~)~%" (find-player-from-stream user-stream) words)))
 ;;How will I make channels? Maybe I'll make a function for each channel that conses a user to a list of people on the channel if they meet such-and-such condition, and have a channel-say command for each of them such that it prints it to all the streams on the channel? This is enough code reuse that it probably warrants a macro.
 (defmacro channel (name level c-class species gender city newbie)
   `(defparameter ,@name nil)
   `(let ((channel-loop (concatenate 'string ,@name "-update")))
-     (defun ,#|I'm not sure how this would work in backtick notation...|#channel-loop ()
+     (defun ,channel-loop ()
        (labels 
 	   ((channel-loop (players-i) 
 	      (if
@@ -197,4 +202,4 @@ along with MULCH.  If not, see <http://www.gnu.org/licenses/>.|#
 (defun |go out| ()
       out)
 ;;;Should be enough.
-;;;Note: this is not elegant. Replace with a (move..) function or macro which takes a parameter....
+;;;Note: this is not elegant. Replace with a (move..) function or macro which takes a parameter.... 
