@@ -31,7 +31,7 @@
 							 (progn
 							   (push new accum)
 							   accum)
-							 accum))))))
+							 accum)))))
 (defstruct server-state ;This is also from the IRC server, and will probably have to be heavily modified/destroyed to fit in a MULCH
   (listening-sockets nil)
   (connections nil)
@@ -80,27 +80,56 @@
 	    (welcome-to-mulch stream))))))
 (defun build-player-aux (username password gender stream)
   (princ "Which species are you? Choose from the following list:" stream)
-  (princ species-list stream);;Add species with the game engine.
-  (let ((species (read-line)))
-    (cond ((equalp species "human")
-	   (build-player-aux-1 username password ender "human" stream))
-	  ((equalp species "elf")
-	   (build-player-aux-1 username password gender "elf" stream))
-	  ((equalp species "dwarf")
-	   (build-player-aux-1 username password gender "dwarf" stream))
-	  ((equalp species "orc")
-	   (build-player-aux-1 username password gender "orc" stream))
-	  ((equalp species "centaur")
-	   (build-player-aux-1 username password gender "centaur" stream))
-	  ;To be added with default stat mods.
-	  (t (princ "Sorry, didn't catch that. Let's try again")
-	     (build-player-aux username password gender stream))))) ;This may seem unnecessary, but it's for exception handling and general cleanliness, especially as species affects stat modifiers
-(defun build-player-aux-1 (username password gender species stream) 
- (setf (gethash username *users*) (make-player :name username :password password :gender gender :species species :health 500 :mana 100 :level 0 :experience 0 :stream stream :location starting-location :saved-location starting-location))) ;Maybe change default health and mana...and add other things.
+  (format stream "~{~@(~a~)~%~}"  *species-list*);;Add species with the game engine.
+  (let ((species (read-line stream)))
+    (if (not (member species *species-list* :test equalp))
+	(progn (princ "Sorry, didn't catch that. Let's try again" stream)
+	       (build-player-aux username password gender stream))
+      (build-player-aux* username password gender species stream))))
+(defun build-player-aux* (username password gender species stream)
+  (princ "If you wish to choose a character class now, do so:" stream)
+  (format stream "~{~@(~a~)~%~}" *c-class-list*)
+  (let ((c-class (read-line stream)))
+    (if (not (member c-class *c-class-list* :test equalp))
+	(progn (princ "Sorry, didn't catch that. Let's try again" stream)
+	       (build-player-aux* username password gender species stream))
+      (build-player-aux** username password gender species c-class stream))))
+(defun build-player-aux** (username password gender species c-class stream) 
+ (setf (gethash username *users*) (make-player :name username :password password :gender gender :species species :stream stream))) ;Maybe change default health and mana...and add other things.
   
   (newbie-tut (username))))
 ;;Define a newbie-tutorial 
-(defun username-variable (username) (concatenate 'string "*user-" username));This will be bound to the structs, so it deserves a function...
+
+
+;;Some cities will only be open to people of certain character classes, and such
+;;We want to emphasize roleplay, and give each city a local flavor. This is, after all, based on D&Dis.
+;;Similarly, though, as we'd be characterized as gods, we'd need to intefere very indirectly, and have some random bad stuff (e.g., natural disasters) happen.
+;;We'll need a way of classifying character classes, and we'd probably have to limit the number of them 
+#|List of (suggested) Character Classes:
+Platonist
+Aristotlean
+Confucian
+Spinozist
+Cartesian
+Kantian
+Hegelian
+Buddhist
+Schopenhauerist
+Positivist
+Atheistic Existentialist
+Theistic Existentialist
+Lockean
+Hobbesian
+Postmodernist
+Objectivist
+Mohist
+
+We'll need to shorten this list...
+
+|#
+;We'll also need to find a way so that they can take on the roles of, say, Druids or Merchants in Ateraan. Maybe they produce some goods
+
+(defun username-variable (username) (gethash username *users*));This will be bound to the structs, so it deserves a function...
 (defstruct connection ;;Also from IRC server
   (socket nil)
   (output-list) ;;List of strings to push out of this socket.
