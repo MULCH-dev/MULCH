@@ -90,12 +90,12 @@
   (princ "If you wish to choose a character class now, do so:" stream)
   (format stream "~{~@(~a~)~%~}" *c-class-list*)
   (let ((c-class (read-line stream)))
-    (if (not (member c-class *c-class-list* :test equalp))
+    (if (and (not (member c-class *c-class-list* :test equalp)) (not (null c-class)))
 	(progn (princ "Sorry, didn't catch that. Let's try again" stream)
 	       (build-player-aux* username password gender species stream))
       (build-player-aux** username password gender species c-class stream))))
 (defun build-player-aux** (username password gender species c-class stream) 
- (setf (gethash username *users*) (make-player :name username :password password :gender gender :species species :stream stream))) ;Maybe change default health and mana...and add other things.
+ (setf (gethash username *users*) (make-player :name username :password password :gender gender :species species :char-class c-class :stream stream))) ;Maybe change default health and mana...and add other things.
   
   (newbie-tut (username))))
 ;;Define a newbie-tutorial 
